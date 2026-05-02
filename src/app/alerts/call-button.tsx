@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, Loader2, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function CallButton({ alertId, contactName }: { alertId: string; contactName: string }) {
   const router = useRouter();
@@ -33,17 +32,31 @@ export function CallButton({ alertId, contactName }: { alertId: string; contactN
     }
   }
 
+  const bg =
+    state === "ok"
+      ? "var(--ok-bg)"
+      : state === "err"
+        ? "var(--critical-bg)"
+        : "var(--ink)";
+  const fg =
+    state === "ok"
+      ? "var(--ok)"
+      : state === "err"
+        ? "var(--critical)"
+        : "#fff";
+  const border =
+    state === "ok"
+      ? "var(--ok-bg)"
+      : state === "err"
+        ? "var(--critical-border)"
+        : "transparent";
+
   return (
     <button
       onClick={dial}
       disabled={state === "calling"}
-      className={cn(
-        "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition",
-        state === "idle" && "bg-iris-500 text-white hover:bg-iris-400 shadow-glow",
-        state === "calling" && "bg-iris-700/40 text-iris-100",
-        state === "ok" && "bg-risk-low/20 text-risk-low ring-1 ring-risk-low/40",
-        state === "err" && "bg-risk-critical/20 text-risk-critical ring-1 ring-risk-critical/40",
-      )}
+      className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+      style={{ background: bg, color: fg, border: `1px solid ${border}` }}
       title={error ?? `Brief ${contactName} via voice`}
     >
       {state === "calling" && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -51,11 +64,11 @@ export function CallButton({ alertId, contactName }: { alertId: string; contactN
       {state === "err" && <X className="h-4 w-4" />}
       {state === "idle" && <Phone className="h-4 w-4" />}
       {state === "calling"
-        ? "dialing…"
+        ? "Dialing…"
         : state === "ok"
-          ? "call placed"
+          ? "Call placed"
           : state === "err"
-            ? error ?? "call failed"
+            ? (error ?? "Call failed")
             : `Brief ${contactName.split(" ")[0]}`}
     </button>
   );

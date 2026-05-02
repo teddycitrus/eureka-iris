@@ -12,6 +12,8 @@ model Supplier {
   name       String
   region     String
   country    String
+  latitude   Float    @default(0)
+  longitude  Float    @default(0)
   categories String   // JSON array of strings
   tier       Int      @default(1)
   riskLevel  String   @default("low")

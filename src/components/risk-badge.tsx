@@ -1,10 +1,31 @@
 import { cn } from "@/lib/utils";
 
-const styles: Record<string, string> = {
-  low: "bg-risk-low/15 text-risk-low ring-risk-low/30",
-  medium: "bg-risk-medium/15 text-risk-medium ring-risk-medium/30",
-  high: "bg-risk-high/15 text-risk-high ring-risk-high/30",
-  critical: "bg-risk-critical/20 text-risk-critical ring-risk-critical/40",
+const variants: Record<string, { bg: string; fg: string; border: string }> = {
+  low: {
+    bg:     "var(--ok-bg)",
+    fg:     "var(--ok)",
+    border: "oklch(0.85 0.08 155)",
+  },
+  medium: {
+    bg:     "var(--warn-bg)",
+    fg:     "oklch(0.45 0.14 65)",
+    border: "var(--warn-border)",
+  },
+  high: {
+    bg:     "var(--critical-bg)",
+    fg:     "var(--critical)",
+    border: "var(--critical-border)",
+  },
+  critical: {
+    bg:     "var(--critical-bg)",
+    fg:     "var(--critical)",
+    border: "var(--critical-border)",
+  },
+  info: {
+    bg:     "var(--surface-2)",
+    fg:     "var(--ink-3)",
+    border: "var(--border)",
+  },
 };
 
 export function RiskBadge({
@@ -15,15 +36,33 @@ export function RiskBadge({
   className?: string;
 }) {
   const s = severity.toLowerCase();
+  const v = variants[s] ?? variants.info;
+
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ring-1",
-        styles[s] ?? styles.low,
+        "inline-flex items-center gap-[5px] font-mono text-[10.5px] font-medium uppercase tracking-[0.02em] whitespace-nowrap",
         className,
       )}
+      style={{
+        background: v.bg,
+        color: v.fg,
+        border: `1px solid ${v.border}`,
+        borderRadius: 4,
+        padding: "1px 6px",
+        lineHeight: 1.4,
+      }}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", `bg-current`)} />
+      <span
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: "50%",
+          background: v.fg,
+          display: "inline-block",
+          flexShrink: 0,
+        }}
+      />
       {severity}
     </span>
   );

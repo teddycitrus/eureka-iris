@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function DeleteContactButton({ id, name }: { id: string; name: string }) {
   const router = useRouter();
@@ -23,14 +22,18 @@ export function DeleteContactButton({ id, name }: { id: string; name: string }) 
       onBlur={() => setConfirm(false)}
       disabled={pending}
       title={confirm ? `Click again to delete ${name}` : `Delete ${name}`}
-      className={cn(
-        "rounded-lg p-1.5 transition",
-        confirm
-          ? "bg-risk-critical/20 text-risk-critical ring-1 ring-risk-critical/40"
-          : "text-ink-dim hover:bg-bg-hover hover:text-risk-critical",
-      )}
+      className="rounded-md p-1.5 transition-colors"
+      style={{
+        color: confirm ? "var(--critical)" : "var(--ink-4)",
+        background: confirm ? "var(--critical-bg)" : "transparent",
+        border: confirm ? "1px solid var(--critical-border)" : "1px solid transparent",
+      }}
     >
-      {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+      {pending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Trash2 className="h-3.5 w-3.5" />
+      )}
     </button>
   );
 }

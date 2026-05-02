@@ -1,41 +1,62 @@
-import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 export function StatCard({
   label,
   value,
   hint,
-  icon: Icon,
-  accent = "iris",
+  delta,
+  deltaDir,
+  accent,
 }: {
   label: string;
   value: string | number;
   hint?: string;
-  icon: LucideIcon;
-  accent?: "iris" | "cyan" | "rose" | "amber";
+  delta?: string;
+  deltaDir?: "up" | "down" | "neutral";
+  accent?: React.ReactNode;
 }) {
-  const accents: Record<string, string> = {
-    iris: "from-iris-500/30 to-iris-700/0 text-iris-200",
-    cyan: "from-accent-cyan/30 to-accent-cyan/0 text-accent-cyan",
-    rose: "from-accent-rose/30 to-accent-rose/0 text-accent-rose",
-    amber: "from-accent-amber/30 to-accent-amber/0 text-accent-amber",
-  };
+  const deltaColor =
+    deltaDir === "up"
+      ? "var(--ok)"
+      : deltaDir === "down"
+        ? "var(--critical)"
+        : "var(--ink-4)";
+
   return (
-    <div className="glass relative overflow-hidden rounded-2xl p-5">
-      <div
-        className={cn(
-          "absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gradient-radial blur-2xl",
-          "bg-gradient-to-br",
-          accents[accent],
-        )}
-      />
-      <div className="relative">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-ink-dim">
-          <Icon className={cn("h-3.5 w-3.5", accents[accent].split(" ").pop())} />
+    <div
+      className="flex flex-col gap-2 rounded-lg p-4"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
+        minHeight: 100,
+      }}
+    >
+      <div className="flex items-start justify-between">
+        <span className="text-xs font-medium" style={{ color: "var(--ink-3)" }}>
           {label}
-        </div>
-        <div className="mt-3 font-display text-3xl text-ink">{value}</div>
-        {hint && <div className="mt-1 text-xs text-ink-muted">{hint}</div>}
+        </span>
+        {accent}
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span
+          className="font-mono text-[28px] font-semibold leading-none tracking-tight"
+          style={{ color: "var(--ink)" }}
+        >
+          {value}
+        </span>
+      </div>
+      <div className="mt-auto flex items-center justify-between">
+        {(hint || delta) && (
+          <span
+            className="font-mono text-[11px]"
+            style={{ color: deltaDir ? deltaColor : "var(--ink-4)" }}
+          >
+            {deltaDir === "up" && "↑ "}
+            {deltaDir === "down" && "↓ "}
+            {delta ?? hint}
+          </span>
+        )}
       </div>
     </div>
   );

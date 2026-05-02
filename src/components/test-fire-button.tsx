@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Zap, Loader2, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function TestFireButton({
   variant = "primary",
@@ -26,11 +25,8 @@ export function TestFireButton({
       body: "{}",
     });
     const data = (await res.json().catch(() => ({}))) as {
-      alertId?: string;
-      supplier?: string;
-      severity?: string;
-      headline?: string;
-      error?: string;
+      alertId?: string; supplier?: string; severity?: string;
+      headline?: string; error?: string;
     };
     if (!res.ok) {
       setState("err");
@@ -47,26 +43,58 @@ export function TestFireButton({
     setTimeout(() => setState("idle"), 3000);
   }
 
-  const base =
-    "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition";
+  const isIdle = state === "idle";
+
   const styles = {
-    primary:
-      "bg-accent-rose/90 text-white shadow-[0_0_0_1px_rgba(255,108,168,0.4),0_8px_30px_-8px_rgba(255,108,168,0.6)] hover:bg-accent-rose",
-    ghost:
-      "border border-line bg-bg-raised/60 text-ink-muted hover:border-accent-rose/40 hover:text-ink",
-  } as const;
+    primary: {
+      background: isIdle
+        ? "var(--warn-bg)"
+        : state === "ok"
+          ? "var(--ok-bg)"
+          : "var(--critical-bg)",
+      color: isIdle
+        ? "oklch(0.45 0.14 65)"
+        : state === "ok"
+          ? "var(--ok)"
+          : "var(--critical)",
+      border: isIdle
+        ? "var(--warn-border)"
+        : state === "ok"
+          ? "oklch(0.85 0.08 155)"
+          : "var(--critical-border)",
+    },
+    ghost: {
+      background: isIdle
+        ? "var(--surface)"
+        : state === "ok"
+          ? "var(--ok-bg)"
+          : "var(--critical-bg)",
+      color: isIdle
+        ? "var(--ink-2)"
+        : state === "ok"
+          ? "var(--ok)"
+          : "var(--critical)",
+      border: isIdle
+        ? "var(--border-strong)"
+        : state === "ok"
+          ? "oklch(0.85 0.08 155)"
+          : "var(--critical-border)",
+    },
+  };
+
+  const s = styles[variant];
 
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={fire}
         disabled={pending || state !== "idle"}
-        className={cn(
-          base,
-          state === "ok" && "bg-risk-low/20 text-risk-low ring-1 ring-risk-low/40",
-          state === "err" && "bg-risk-critical/20 text-risk-critical ring-1 ring-risk-critical/40",
-          state === "idle" && styles[variant],
-        )}
+        className="inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+        style={{
+          background: s.background,
+          color: s.color,
+          border: `1px solid ${s.border}`,
+        }}
         title="Mint a synthetic high-severity alert against a callable supplier"
       >
         {state === "ok" ? (
@@ -79,19 +107,17 @@ export function TestFireButton({
           <Zap className="h-4 w-4" />
         )}
         {state === "ok"
-          ? "alert fired"
+          ? "Alert fired"
           : state === "err"
-            ? "fire failed"
+            ? "Fire failed"
             : pending
-              ? "firing…"
+              ? "Firing…"
               : "Simulate incident"}
       </button>
       {msg && state !== "idle" && (
         <span
-          className={cn(
-            "max-w-xs truncate text-xs",
-            state === "ok" ? "text-ink-muted" : "text-risk-critical",
-          )}
+          className="max-w-xs truncate text-xs"
+          style={{ color: state === "ok" ? "var(--ink-3)" : "var(--critical)" }}
         >
           {msg}
         </span>
