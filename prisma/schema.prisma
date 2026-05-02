@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id         String   @id @default(cuid())
+  name       String
+  region     String
+  country    String
+  categories String   // JSON array of strings
+  tier       Int      @default(1)
+  riskLevel  String   @default("low")
+  notes      String?
+  contacts   ContactOnSupplier[]
+  alerts     Alert[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Contact {
+  id           String   @id @default(cuid())
+  name         String
+  role         String
+  phone        String   // E.164
+  email        String?
+  receiveCalls Boolean  @default(true)
+  escalation   Int      @default(1) // 1 = first responder, 2 = backup, ...
+  suppliers    ContactOnSupplier[]
+  calls        Call[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ContactOnSupplier {
+  contactId  String
+  supplierId String
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, supplierId])
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  url         String   @unique
+  source      String
+  publishedAt DateTime
+  region      String?
+  topics      String   // JSON array
+  riskScore   Float    @default(0)
+  alerts      Alert[]
+  createdAt   DateTime @default(now())
+}
+
+model Alert {
+  id             String   @id @default(cuid())
+  newsId         String
+  news           NewsItem @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  supplierId     String
+  supplier       Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  severity       String   // low | medium | high | critical
+  status         String   @default("pending") // pending | calling | resolved | escalated | dismissed
+  recommendation String
+  decision       String?
+  decisionMaker  String?
+  calls          Call[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Call {
+  id           String    @id @default(cuid())
+  alertId      String
+  alert        Alert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  vapiCallId   String?
+  twilioSid    String?
+  status       String    @default("initiated") // initiated | ringing | in-progress | completed | failed | no-answer
+  outcome      String?   // approve | hold | escalate | dismiss
+  transcript   String?
+  durationSec  Int?
+  createdAt    DateTime  @default(now())
+  endedAt      DateTime?
+}
