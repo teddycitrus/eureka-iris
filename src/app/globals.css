@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #0A0612;
+  color: #F4F0FF;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Iris signature backdrop ─────────────────────────────────── */
+.iris-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(111, 63, 240, 0.22), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 90%, rgba(91, 233, 233, 0.10), transparent 70%),
+    radial-gradient(ellipse 40% 25% at 50% 50%, rgba(255, 108, 168, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.iris-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(111, 63, 240, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(111, 63, 240, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 90%);
+}
+
+/* ── Glass card ──────────────────────────────────────────────── */
+.glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+    rgba(26, 15, 46, 0.55);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(111, 63, 240, 0.18);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 50px -28px rgba(0, 0, 0, 0.7);
+}
+
+.glass:hover {
+  border-color: rgba(111, 63, 240, 0.32);
+}
+
+/* ── Eye / iris animation for the brand mark ─────────────────── */
+@keyframes irisBreath {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+.iris-breath { animation: irisBreath 3s ease-in-out infinite; }
+
+@keyframes pulseRing {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.pulse-ring { animation: pulseRing 1.6s ease-out infinite; }
+
+/* ── Scrollbar tweak ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(111, 63, 240, 0.25);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(111, 63, 240, 0.45); background-clip: padding-box; }
