@@ -42,18 +42,18 @@ export function TestFireButton({
     setMsg(`${data.severity} · ${data.supplier}`);
     startTransition(() => router.refresh());
     if (redirect && data.alertId) {
-      setTimeout(() => router.push(`/alerts#${data.alertId}`), 600);
+      setTimeout(() => router.push(`/?alert=${data.alertId}#${data.alertId}`), 600);
     }
     setTimeout(() => setState("idle"), 3000);
   }
 
   const base =
-    "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition";
+    "group inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-chart transition-colors";
   const styles = {
     primary:
-      "bg-accent-rose/90 text-white shadow-[0_0_0_1px_rgba(255,108,168,0.4),0_8px_30px_-8px_rgba(255,108,168,0.6)] hover:bg-accent-rose",
+      "border border-amber/60 bg-amber/15 text-amber hover:bg-amber/25 hover:border-amber",
     ghost:
-      "border border-line bg-bg-raised/60 text-ink-muted hover:border-accent-rose/40 hover:text-ink",
+      "border border-line bg-bg-raised/50 text-ink-muted hover:border-amber/50 hover:text-amber",
   } as const;
 
   return (
@@ -63,33 +63,33 @@ export function TestFireButton({
         disabled={pending || state !== "idle"}
         className={cn(
           base,
-          state === "ok" && "bg-risk-low/20 text-risk-low ring-1 ring-risk-low/40",
-          state === "err" && "bg-risk-critical/20 text-risk-critical ring-1 ring-risk-critical/40",
+          state === "ok" && "border-risk-low/50 bg-risk-low/15 text-risk-low",
+          state === "err" && "border-risk-critical/50 bg-risk-critical/15 text-risk-critical",
           state === "idle" && styles[variant],
         )}
-        title="Mint a synthetic high-severity alert against a callable supplier"
+        title="Fire a synthetic high-severity alert"
       >
         {state === "ok" ? (
-          <Check className="h-4 w-4" />
+          <Check className="h-3 w-3" />
         ) : state === "err" ? (
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         ) : pending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
-          <Zap className="h-4 w-4" />
+          <Zap className="h-3 w-3" />
         )}
         {state === "ok"
           ? "alert fired"
           : state === "err"
             ? "fire failed"
             : pending
-              ? "firing…"
-              : "Simulate incident"}
+              ? "firing"
+              : "simulate"}
       </button>
       {msg && state !== "idle" && (
         <span
           className={cn(
-            "max-w-xs truncate text-xs",
+            "max-w-xs truncate font-mono text-[10px] uppercase tracking-chart",
             state === "ok" ? "text-ink-muted" : "text-risk-critical",
           )}
         >

@@ -15,11 +15,36 @@ model Supplier {
   categories String   // JSON array of strings
   tier       Int      @default(1)
   riskLevel  String   @default("low")
+  latitude   Float?
+  longitude  Float?
   notes      String?
   contacts   ContactOnSupplier[]
   alerts     Alert[]
+  shipments  Shipment[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Shipment {
+  id          String    @id @default(cuid())
+  ref         String
+  mode        String    @default("ocean") // ocean | air | rail | truck
+  status      String    @default("on-track") // on-track | rerouted | delayed | held | arrived
+  originLabel String
+  originLat   Float
+  originLng   Float
+  destLabel   String
+  destLat     Float
+  destLng     Float
+  waypoints   String    @default("[]") // JSON [[lat,lng], …] between origin and dest
+  valueUSD    Float?
+  etaAt       DateTime?
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  alertId     String?
+  alert       Alert?    @relation(fields: [alertId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Contact {
@@ -60,19 +85,20 @@ model NewsItem {
 }
 
 model Alert {
-  id             String   @id @default(cuid())
+  id             String     @id @default(cuid())
   newsId         String
-  news           NewsItem @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  news           NewsItem   @relation(fields: [newsId], references: [id], onDelete: Cascade)
   supplierId     String
-  supplier       Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  severity       String   // low | medium | high | critical
-  status         String   @default("pending") // pending | calling | resolved | escalated | dismissed
+  supplier       Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  severity       String     // low | medium | high | critical
+  status         String     @default("pending") // pending | calling | resolved | escalated | dismissed
   recommendation String
   decision       String?
   decisionMaker  String?
   calls          Call[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  shipments      Shipment[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model Call {

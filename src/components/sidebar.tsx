@@ -10,12 +10,13 @@ import {
   PhoneCall,
   Siren,
   Settings,
+  Globe2,
 } from "lucide-react";
 import { IrisWordmark } from "./iris-mark";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/", label: "Pulse", icon: LayoutDashboard },
+  { href: "/", label: "Lane map", icon: Globe2 },
   { href: "/alerts", label: "Alerts", icon: Siren },
   { href: "/news", label: "Signals", icon: Newspaper },
   { href: "/suppliers", label: "Suppliers", icon: Building2 },

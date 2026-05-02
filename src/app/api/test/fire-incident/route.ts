@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { parseList } from "@/lib/utils";
+import { bus } from "@/lib/events";
+import { dispatchCallsForAlert } from "@/lib/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -65,12 +67,22 @@ export async function POST(req: NextRequest) {
     include: { news: true, supplier: true },
   });
 
+  bus.emit({
+    type: "alert.created",
+    alertId: alert.id,
+    supplierId: supplier.id,
+    severity,
+  });
+
+  const dispatch = await dispatchCallsForAlert(alert.id);
+
   return NextResponse.json({
     ok: true,
     alertId: alert.id,
     supplier: supplier.name,
     severity,
     headline: scenario.title,
+    dispatch,
   });
 }
 

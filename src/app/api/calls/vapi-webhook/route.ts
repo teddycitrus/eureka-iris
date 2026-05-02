@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { bus } from "@/lib/events";
+import { REROUTE_PRESETS, isReroutePreset } from "@/lib/reroute";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +39,10 @@ export async function POST(req: NextRequest) {
 
     case "function-call": {
       const fn = message.functionCall;
+      const args = (fn?.parameters ?? fn?.arguments ?? {}) as Record<string, unknown>;
+
       if (fn?.name === "record_decision") {
-        const args = (fn.parameters ?? fn.arguments ?? {}) as {
-          outcome?: string;
-          escalateTo?: string;
-          notes?: string;
-        };
-        const decision = args.outcome ?? "unknown";
+        const decision = String(args.outcome ?? "unknown");
         await db.call.update({
           where: { id: call.id },
           data: { outcome: decision },
@@ -60,14 +59,54 @@ export async function POST(req: NextRequest) {
                     ? "dismissed"
                     : "pending",
             decision: [decision, args.notes].filter(Boolean).join(" — "),
-            decisionMaker: args.escalateTo,
+            decisionMaker: typeof args.escalateTo === "string" ? args.escalateTo : null,
           },
         });
+        bus.emit({
+          type: "call.outcome",
+          callId: call.id,
+          outcome: decision,
+          alertId: call.alertId,
+        });
+        return NextResponse.json({
+          result: "Decision recorded. Thanks — ending the call now.",
+        });
       }
-      // Tools must return a value — Vapi will speak the `result` text.
-      return NextResponse.json({
-        result: "Decision recorded. Thanks — ending the call now.",
-      });
+
+      if (fn?.name === "reroute_shipment") {
+        const ref = String(args.shipmentRef ?? "");
+        const via = String(args.via ?? "");
+        const reason = typeof args.reason === "string" ? args.reason : null;
+        if (!ref || !isReroutePreset(via)) {
+          return NextResponse.json({
+            result: "I couldn't find that shipment or that corridor isn't supported.",
+          });
+        }
+        const shipment = await db.shipment.findFirst({ where: { ref } });
+        if (!shipment) {
+          return NextResponse.json({
+            result: `I don't see shipment ${ref} on the list — could you re-state the reference?`,
+          });
+        }
+        const preset = REROUTE_PRESETS[via];
+        await db.shipment.update({
+          where: { id: shipment.id },
+          data: {
+            waypoints: JSON.stringify(preset.waypoints),
+            status: "rerouted",
+          },
+        });
+        bus.emit({
+          type: "shipment.updated",
+          shipmentId: shipment.id,
+          status: "rerouted",
+        });
+        return NextResponse.json({
+          result: `Rerouting ${ref} ${preset.label}${reason ? ` — noted: ${reason}` : ""}. The map is updating now.`,
+        });
+      }
+
+      return NextResponse.json({ result: "Acknowledged." });
     }
 
     case "end-of-call-report": {

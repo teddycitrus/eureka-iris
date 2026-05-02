@@ -1,5 +1,6 @@
 import { env } from "./env";
 import { elevenLabsVoiceConfig } from "./elevenlabs";
+import { REROUTE_PRESETS } from "./reroute";
 
 /**
  * Thin wrapper around the Vapi REST API.
@@ -12,6 +13,15 @@ const VAPI_BASE = "https://api.vapi.ai";
 
 type VapiCallResponse = { id: string; status?: string };
 
+export type ShipmentBrief = {
+  ref: string;
+  origin: string;
+  dest: string;
+  mode: string;
+  status: string;
+  valueUSD?: number | null;
+};
+
 export type AssistantBriefing = {
   alertId: string;
   contactName: string;
@@ -21,10 +31,29 @@ export type AssistantBriefing = {
   headline: string;
   summary: string;
   recommendation: string;
+  shipments?: ShipmentBrief[];
 };
 
 /** Build the system prompt for the on-call voice agent. */
 function buildSystemPrompt(b: AssistantBriefing): string {
+  const shipmentsBlock =
+    b.shipments && b.shipments.length > 0
+      ? [
+          "",
+          "── LINKED SHIPMENTS ──",
+          ...b.shipments.map(
+            (s) =>
+              `- ${s.ref} | ${s.mode} | ${s.origin} → ${s.dest} | status: ${s.status}${
+                s.valueUSD ? ` | value: $${Math.round(s.valueUSD).toLocaleString()}` : ""
+              }`,
+          ),
+        ].join("\n")
+      : "";
+
+  const presetList = Object.entries(REROUTE_PRESETS)
+    .map(([key, v]) => `  • ${key} — ${v.label}`)
+    .join("\n");
+
   return [
     "You are Iris, an interactive supply-chain risk briefing agent calling on behalf of the operations team.",
     `You are calling ${b.contactName} about a ${b.severity.toUpperCase()} risk affecting ${b.supplierName} (${b.region}).`,
@@ -38,17 +67,23 @@ function buildSystemPrompt(b: AssistantBriefing): string {
     "   (b) HOLD and reassess later",
     "   (c) ESCALATE to another stakeholder",
     "   (d) DISMISS as non-actionable",
-    "5. If the contact wants to escalate, ask who to escalate to.",
-    "6. Repeat back their decision in one sentence to confirm.",
-    "7. Thank them and end the call.",
+    "5. If shipments are linked and the contact wants to reroute one, call the `reroute_shipment` tool with the shipment reference and a preset.",
+    "6. If the contact wants to escalate, ask who to escalate to.",
+    "7. Repeat back their decision in one sentence to confirm.",
+    "8. Thank them and end the call.",
     "",
-    "Always call the `record_decision` tool before saying goodbye, with the captured outcome.",
+    "Always call `record_decision` before saying goodbye with the captured outcome.",
     "Be concise, professional, and human. Do not invent facts beyond the briefing.",
+    "Never read shipment refs character-by-character — say 'shipment PO 9821' as 'PO ninety-eight twenty-one'.",
+    "",
+    "Available reroute presets (only these are valid):",
+    presetList,
     "",
     "── BRIEFING ──",
     `Headline: ${b.headline}`,
     `Summary: ${b.summary}`,
     `Recommended action: ${b.recommendation}`,
+    shipmentsBlock,
   ].join("\n");
 }
 
@@ -83,6 +118,34 @@ function buildAssistant(b: AssistantBriefing) {
                 notes: { type: "string" },
               },
               required: ["outcome"],
+            },
+          },
+        },
+        {
+          type: "function" as const,
+          function: {
+            name: "reroute_shipment",
+            description:
+              "Reroute a linked shipment along a named maritime/air corridor. The Iris globe will redraw the route in real time. Use when the contact agrees to redirect a specific shipment.",
+            parameters: {
+              type: "object",
+              properties: {
+                shipmentRef: {
+                  type: "string",
+                  description:
+                    "The shipment reference exactly as it appears in the briefing (e.g. 'PO-9821-TW').",
+                },
+                via: {
+                  type: "string",
+                  enum: Object.keys(REROUTE_PRESETS),
+                  description: "Named reroute corridor.",
+                },
+                reason: {
+                  type: "string",
+                  description: "One-sentence justification, e.g. 'Panama Canal congestion'.",
+                },
+              },
+              required: ["shipmentRef", "via"],
             },
           },
         },

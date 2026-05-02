@@ -1,6 +1,17 @@
 import { cn } from "@/lib/utils";
 
-export function IrisMark({ className, animate = true }: { className?: string; animate?: boolean }) {
+/**
+ * Brand mark — an iris over a horizon.
+ * Pupil is a fixed point; the surrounding rings imply a concentric
+ * isobar/weather-chart pattern, fitting the supply-chain ops theme.
+ */
+export function IrisMark({
+  className,
+  animate = true,
+}: {
+  className?: string;
+  animate?: boolean;
+}) {
   return (
     <svg
       viewBox="0 0 40 40"
@@ -8,26 +19,65 @@ export function IrisMark({ className, animate = true }: { className?: string; an
       className={cn("h-7 w-7", animate && "iris-breath", className)}
     >
       <defs>
-        <radialGradient id="irisGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#5BE9E9" />
-          <stop offset="55%" stopColor="#6F3FF0" />
-          <stop offset="100%" stopColor="#1F0F4A" />
+        <radialGradient id="irisIris" cx="50%" cy="48%" r="60%">
+          <stop offset="0%" stopColor="rgb(255 213 152)" />
+          <stop offset="55%" stopColor="rgb(240 158 56)" />
+          <stop offset="100%" stopColor="rgb(76 43 8)" />
         </radialGradient>
       </defs>
-      <ellipse cx="20" cy="20" rx="19" ry="11" stroke="#A883FF" strokeOpacity="0.6" />
-      <circle cx="20" cy="20" r="9" fill="url(#irisGrad)" />
-      <circle cx="20" cy="20" r="3.2" fill="#0A0612" />
-      <circle cx="22.5" cy="17.5" r="1.2" fill="#F4F0FF" />
+      {/* horizon */}
+      <line
+        x1="3"
+        y1="20"
+        x2="37"
+        y2="20"
+        stroke="rgb(230 223 200)"
+        strokeOpacity="0.18"
+        strokeWidth="0.6"
+      />
+      {/* outer almond — eye shape */}
+      <path
+        d="M3 20 Q 20 7 37 20 Q 20 33 3 20 Z"
+        stroke="rgb(255 213 152)"
+        strokeOpacity="0.55"
+        strokeWidth="0.9"
+      />
+      {/* iris */}
+      <circle cx="20" cy="20" r="8.5" fill="url(#irisIris)" />
+      {/* concentric isobars over iris */}
+      <circle
+        cx="20"
+        cy="20"
+        r="6"
+        fill="none"
+        stroke="rgb(230 223 200)"
+        strokeOpacity="0.15"
+        strokeWidth="0.4"
+      />
+      <circle
+        cx="20"
+        cy="20"
+        r="4"
+        fill="none"
+        stroke="rgb(230 223 200)"
+        strokeOpacity="0.2"
+        strokeWidth="0.4"
+      />
+      {/* pupil */}
+      <circle cx="20" cy="20" r="2.6" fill="rgb(6 9 14)" />
+      {/* catch-light */}
+      <circle cx="22.2" cy="17.8" r="0.9" fill="rgb(230 223 200)" />
     </svg>
   );
 }
 
 export function IrisWordmark({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <IrisMark />
-      <span className="font-display text-xl tracking-tight text-ink">
-        iris<span className="text-iris-300">.</span>
+    <div className={cn("flex items-baseline gap-2.5", className)}>
+      <IrisMark className="self-center" />
+      <span className="font-display text-[22px] font-medium leading-none tracking-tight text-ink">
+        iris
+        <span className="text-amber">.</span>
       </span>
     </div>
   );

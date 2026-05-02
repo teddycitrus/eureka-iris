@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { fetchSupplyChainNews } from "@/lib/news";
 import { assessRisk } from "@/lib/risk";
 import { severityFromScore } from "@/lib/utils";
+import { bus } from "@/lib/events";
+import { dispatchCallsForAlert } from "@/lib/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -57,10 +59,11 @@ export async function POST(req: NextRequest) {
     });
 
     let alertCount = 0;
+    const alertIds: string[] = [];
     if (assessment.riskScore >= 0.4 && assessment.affectedSupplierIds.length > 0) {
       const severity = severityFromScore(assessment.riskScore);
       for (const sid of assessment.affectedSupplierIds) {
-        await db.alert.create({
+        const createdAlert = await db.alert.create({
           data: {
             newsId: news.id,
             supplierId: sid,
@@ -69,8 +72,21 @@ export async function POST(req: NextRequest) {
             status: "pending",
           },
         });
+        bus.emit({
+          type: "alert.created",
+          alertId: createdAlert.id,
+          supplierId: sid,
+          severity,
+        });
+        alertIds.push(createdAlert.id);
         alertCount++;
       }
+    }
+
+    // Auto-dispatch outbound voice briefings for every new alert in parallel.
+    // Errors per alert/contact are absorbed inside dispatchCallsForAlert.
+    if (alertIds.length > 0) {
+      await Promise.allSettled(alertIds.map((id) => dispatchCallsForAlert(id)));
     }
 
     created.push({ newsId: news.id, alertCount });

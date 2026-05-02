@@ -1,64 +1,84 @@
 import type { Config } from "tailwindcss";
 
+const rgb = (v: string) => `rgb(var(${v}) / <alpha-value>)`;
+
 export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
+        // ── Surfaces ─────────────────────────────────────────────
         bg: {
-          DEFAULT: "#0A0612",
-          raised: "#120A1F",
-          card: "#1A0F2E",
-          hover: "#221538",
+          DEFAULT: rgb("--ink-base"),
+          raised: rgb("--panel"),
+          card: rgb("--panel-raised"),
+          hover: rgb("--panel-hover"),
+          deep: rgb("--ink-deep"),
         },
+        // ── Text ─────────────────────────────────────────────────
+        ink: {
+          DEFAULT: rgb("--fg-bright"),
+          muted: rgb("--fg-muted"),
+          dim: rgb("--fg-dim"),
+          warm: rgb("--fg"),
+        },
+        // ── Brand & accents ──────────────────────────────────────
+        // "iris-*" kept as token names so existing components don't break;
+        // the values are now warm amber tones (instrument-panel feel).
         iris: {
-          50: "#F3EEFF",
-          100: "#E4D7FF",
-          200: "#C9AEFF",
-          300: "#A883FF",
-          400: "#8A5DFF",
-          500: "#6F3FF0",
-          600: "#5A2DD4",
-          700: "#4621A8",
-          800: "#321878",
-          900: "#1F0F4A",
+          50: rgb("--amber-50"),
+          100: rgb("--amber-100"),
+          200: rgb("--amber-200"),
+          300: rgb("--amber-300"),
+          400: rgb("--amber-400"),
+          500: rgb("--amber-500"),
+          600: rgb("--amber-600"),
+          700: rgb("--amber-700"),
+          800: rgb("--amber-800"),
+          900: rgb("--amber-900"),
+        },
+        amber: {
+          DEFAULT: rgb("--amber"),
+          deep: rgb("--amber-deep"),
         },
         accent: {
-          cyan: "#5BE9E9",
-          rose: "#FF6CA8",
-          amber: "#F9B872",
+          cyan: rgb("--teal"), // keep token; value now teal
+          rose: rgb("--rose"),
+          amber: rgb("--amber"),
         },
+        // ── Severity ─────────────────────────────────────────────
         risk: {
-          low: "#4ADE80",
-          medium: "#F9B872",
-          high: "#FB7185",
-          critical: "#E11D48",
+          low: rgb("--risk-low"),
+          medium: rgb("--risk-medium"),
+          high: rgb("--risk-high"),
+          critical: rgb("--risk-critical"),
         },
-        ink: {
-          DEFAULT: "#F4F0FF",
-          muted: "#9D8FB7",
-          dim: "#6E6383",
-        },
-        line: "#2A1B47",
+        line: rgb("--rule"),
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "Inter", "sans-serif"],
-        display: ["'Space Grotesk'", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
-      backgroundImage: {
-        "iris-glow":
-          "radial-gradient(circle at 30% 20%, rgba(111,63,240,0.35), transparent 55%), radial-gradient(circle at 80% 70%, rgba(91,233,233,0.18), transparent 60%)",
-        "iris-grid":
-          "linear-gradient(rgba(111,63,240,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(111,63,240,0.08) 1px, transparent 1px)",
+      letterSpacing: {
+        chart: "0.22em",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(111,63,240,0.4), 0 8px 40px -8px rgba(111,63,240,0.55)",
-        card: "0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px -16px rgba(0,0,0,0.6)",
+        glow: "0 0 0 1px rgb(var(--amber) / 0.4), 0 8px 40px -8px rgb(var(--amber) / 0.45)",
+        card: "0 1px 0 rgba(255,255,255,0.025) inset, 0 8px 32px -16px rgba(0,0,0,0.65)",
+        instrument:
+          "0 0 0 1px rgb(var(--rule) / 1), inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 50px -28px rgba(0,0,0,0.85)",
       },
       animation: {
         "pulse-soft": "pulse 2.4s cubic-bezier(.4,0,.6,1) infinite",
         "ping-slow": "ping 2.6s cubic-bezier(0,0,0.2,1) infinite",
+        reveal: "reveal 800ms cubic-bezier(.16,1,.3,1) both",
+      },
+      keyframes: {
+        reveal: {
+          from: { opacity: "0", transform: "translateY(10px)", filter: "blur(6px)" },
+          to: { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
+        },
       },
     },
   },

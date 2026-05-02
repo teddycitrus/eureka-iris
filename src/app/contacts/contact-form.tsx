@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, X, Loader2, Check } from "lucide-react";
+import { UserPlus, Loader2, Check } from "lucide-react";
+import { Window } from "@/components/window";
 import { cn } from "@/lib/utils";
 
 type Supplier = { id: string; name: string; country: string };
@@ -22,6 +23,22 @@ export function ContactForm({ suppliers }: { suppliers: Supplier[] }) {
   const [receiveCalls, setReceiveCalls] = useState(true);
   const [supplierIds, setSupplierIds] = useState<string[]>([]);
 
+  // Initial position is computed on first open so we have viewport dims.
+  const [initialPos, setInitialPos] = useState<{ x: number; y: number } | null>(null);
+  const openedRef = useRef(false);
+  useEffect(() => {
+    if (open && !openedRef.current) {
+      const W = 600;
+      const H = 580;
+      setInitialPos({
+        x: Math.max(20, Math.floor(window.innerWidth / 2 - W / 2)),
+        y: Math.max(20, Math.floor(window.innerHeight / 2 - H / 2)),
+      });
+      openedRef.current = true;
+    }
+    if (!open) openedRef.current = false;
+  }, [open]);
+
   function reset() {
     setName("");
     setRole("");
@@ -32,6 +49,7 @@ export function ContactForm({ suppliers }: { suppliers: Supplier[] }) {
     setSupplierIds([]);
     setError(null);
     setDone(false);
+    setInitialPos(null);
   }
 
   async function submit(e: React.FormEvent) {
@@ -79,175 +97,186 @@ export function ContactForm({ suppliers }: { suppliers: Supplier[] }) {
     );
   }
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-lg bg-iris-500 px-3.5 py-2 text-sm font-medium text-white shadow-glow hover:bg-iris-400"
-      >
-        <UserPlus className="h-4 w-4" />
-        New contact
-      </button>
-    );
+  function close() {
+    if (pending) return;
+    reset();
+    setOpen(false);
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={() => !pending && setOpen(false)}
-    >
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={submit}
-        className="glass w-full max-w-lg rounded-2xl p-6"
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 border border-amber/60 bg-amber/15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-chart text-amber transition-colors hover:bg-amber/25 hover:border-amber"
       >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-display text-lg text-ink">New contact</h3>
-            <p className="text-xs text-ink-muted">
-              Iris will dial this person when alerts ≥ high hit a mapped supplier.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-lg p-1 text-ink-dim hover:bg-bg-hover hover:text-ink"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <UserPlus className="h-3 w-3" />
+        new contact
+      </button>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <Field label="Name" required>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Priya Anand"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Role" required>
-            <input
-              required
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder="VP Operations"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Phone (E.164)" required hint="include country code, no spaces">
-            <input
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+14155551234"
-              className={cn(inputClass, "font-mono")}
-            />
-          </Field>
-          <Field label="Email" hint="optional">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="priya@company.com"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Escalation tier" hint="1 = first responder">
-            <select
-              value={escalation}
-              onChange={(e) => setEscalation(Number(e.target.value))}
-              className={inputClass}
+      {open && initialPos && (
+        <div className="pointer-events-none fixed inset-0 z-50">
+          <Window
+            title="new contact"
+            defaultPos={initialPos}
+            defaultSize={{ width: 600, height: 580 }}
+            minSize={{ width: 380, height: 240 }}
+            zIndex={60}
+            bounds="parent"
+            onClose={close}
+            className="pointer-events-auto shadow-instrument"
+          >
+            <form
+              onSubmit={submit}
+              className="flex h-full flex-col overflow-y-auto px-6 pb-5 pt-4"
             >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  L{n}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Voice ops">
-            <label className="flex h-9 items-center gap-2 rounded-lg border border-line bg-bg-raised/60 px-3 text-sm text-ink">
-              <input
-                type="checkbox"
-                checked={receiveCalls}
-                onChange={(e) => setReceiveCalls(e.target.checked)}
-                className="h-4 w-4 accent-iris-500"
-              />
-              dialable by Iris
-            </label>
-          </Field>
-        </div>
+              <div>
+                <span className="label">station · contact registry</span>
+                <h3 className="mt-1 font-display text-lg italic text-ink-warm">
+                  add a human to the call tree
+                </h3>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-ink-muted">
+                  Iris will dial them when an alert ≥ medium hits a mapped supplier.
+                </p>
+              </div>
 
-        <div className="mt-4">
-          <div className="text-[10px] uppercase tracking-wider text-ink-dim">
-            assign suppliers
-          </div>
-          {suppliers.length === 0 ? (
-            <p className="mt-2 text-xs text-ink-muted">
-              No suppliers yet — add some in /suppliers first.
-            </p>
-          ) : (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {suppliers.map((s) => {
-                const on = supplierIds.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleSupplier(s.id)}
-                    className={cn(
-                      "rounded-md border px-2 py-1 text-xs transition",
-                      on
-                        ? "border-iris-500/60 bg-iris-500/15 text-iris-100"
-                        : "border-line bg-bg-raised/40 text-ink-muted hover:text-ink",
-                    )}
+              <div className="mt-5 grid grid-cols-2 gap-4">
+                <Field label="Name" required>
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Priya Anand"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Role" required>
+                  <input
+                    required
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    placeholder="VP Operations"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Phone (E.164)" required hint="incl. country code">
+                  <input
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+14155551234"
+                    className={cn(inputClass, "font-mono")}
+                  />
+                </Field>
+                <Field label="Email" hint="optional">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="priya@company.com"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Escalation tier" hint="1 = first responder">
+                  <select
+                    value={escalation}
+                    onChange={(e) => setEscalation(Number(e.target.value))}
+                    className={inputClass}
                   >
-                    {s.name}
-                    <span className="ml-1 text-[10px] text-ink-dim">{s.country}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <option key={n} value={n}>
+                        L{n}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Voice ops">
+                  <label className="flex h-9 items-center gap-2 border border-line bg-bg-raised/60 px-3 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      checked={receiveCalls}
+                      onChange={(e) => setReceiveCalls(e.target.checked)}
+                      className="h-3.5 w-3.5 accent-amber"
+                    />
+                    <span className="font-mono text-[10px] uppercase tracking-chart">
+                      dialable by iris
+                    </span>
+                  </label>
+                </Field>
+              </div>
 
-        {error && (
-          <p className="mt-4 rounded-lg bg-risk-critical/15 px-3 py-2 text-xs text-risk-critical">
-            {error}
-          </p>
-        )}
+              <div className="mt-5">
+                <span className="label">assign suppliers</span>
+                {suppliers.length === 0 ? (
+                  <p className="mt-2 text-xs text-ink-muted">
+                    No suppliers yet — add some via the API first.
+                  </p>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {suppliers.map((s) => {
+                      const on = supplierIds.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => toggleSupplier(s.id)}
+                          className={cn(
+                            "border-l px-2 py-1 font-mono text-[10px] uppercase tracking-chart transition-colors",
+                            on
+                              ? "border-amber bg-amber/15 text-amber"
+                              : "border-line bg-bg-raised/40 text-ink-muted hover:border-amber/40 hover:text-ink",
+                          )}
+                        >
+                          {s.name}
+                          <span className="ml-1.5 text-ink-dim">{s.country}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-lg border border-line bg-bg-raised/60 px-3.5 py-2 text-sm text-ink-muted hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={pending || done}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium",
-              done
-                ? "bg-risk-low/20 text-risk-low ring-1 ring-risk-low/40"
-                : "bg-iris-500 text-white shadow-glow hover:bg-iris-400 disabled:opacity-60",
-            )}
-          >
-            {done ? <Check className="h-4 w-4" /> : pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {done ? "saved" : pending ? "saving…" : "Create contact"}
-          </button>
+              {error && (
+                <p className="mt-4 border-l-2 border-risk-critical bg-risk-critical/10 px-3 py-2 font-mono text-[10px] uppercase tracking-chart text-risk-critical">
+                  {error}
+                </p>
+              )}
+
+              <div className="mt-auto flex items-center justify-end gap-2 pt-5">
+                <button
+                  type="button"
+                  onClick={close}
+                  className="border border-line bg-bg-raised/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-chart text-ink-muted hover:text-ink"
+                >
+                  cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={pending || done}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] uppercase tracking-chart transition-colors",
+                    done
+                      ? "border border-risk-low/60 bg-risk-low/15 text-risk-low"
+                      : "border border-amber/60 bg-amber/15 text-amber hover:bg-amber/25 hover:border-amber disabled:opacity-50",
+                  )}
+                >
+                  {done ? (
+                    <Check className="h-3 w-3" />
+                  ) : pending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : null}
+                  {done ? "saved" : pending ? "saving" : "create contact"}
+                </button>
+              </div>
+            </form>
+          </Window>
         </div>
-      </form>
-    </div>
+      )}
+    </>
   );
 }
 
 const inputClass =
-  "h-9 w-full rounded-lg border border-line bg-bg-raised/60 px-3 text-sm text-ink placeholder:text-ink-dim focus:border-iris-500 focus:outline-none focus:ring-2 focus:ring-iris-500/30";
+  "h-9 w-full border border-line bg-bg-raised/60 px-3 text-[12px] text-ink placeholder:text-ink-dim focus:border-amber/60 focus:outline-none focus:ring-1 focus:ring-amber/40";
 
 function Field({
   label,
@@ -261,11 +290,15 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-wider text-ink-dim">
+    <label className="flex flex-col gap-1.5">
+      <span className="label">
         {label}
-        {required && <span className="ml-1 text-iris-300">*</span>}
-        {hint && <span className="ml-2 normal-case tracking-normal text-ink-dim/70">· {hint}</span>}
+        {required && <span className="ml-1 text-amber normal-case">*</span>}
+        {hint && (
+          <span className="ml-2 normal-case tracking-normal text-ink-dim/80">
+            · {hint}
+          </span>
+        )}
       </span>
       {children}
     </label>

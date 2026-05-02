@@ -4,6 +4,7 @@ const db = new PrismaClient();
 
 async function main() {
   await db.call.deleteMany();
+  await db.shipment.deleteMany();
   await db.alert.deleteMany();
   await db.contactOnSupplier.deleteMany();
   await db.newsItem.deleteMany();
@@ -19,6 +20,8 @@ async function main() {
         categories: JSON.stringify(["semiconductors", "logic-ic"]),
         tier: 1,
         riskLevel: "high",
+        latitude: 24.8138,
+        longitude: 120.9676,
         notes: "Tier-1 fab — single source for 5nm SoC.",
       },
     }),
@@ -30,6 +33,8 @@ async function main() {
         categories: JSON.stringify(["logistics", "shipping", "ports"]),
         tier: 1,
         riskLevel: "medium",
+        latitude: 51.9244,
+        longitude: 4.4777,
         notes: "Primary EU import gateway.",
       },
     }),
@@ -41,6 +46,8 @@ async function main() {
         categories: JSON.stringify(["assembly", "electronics"]),
         tier: 2,
         riskLevel: "medium",
+        latitude: 20.8449,
+        longitude: 106.6881,
       },
     }),
     db.supplier.create({
@@ -51,6 +58,8 @@ async function main() {
         categories: JSON.stringify(["raw-materials", "lithium", "battery"]),
         tier: 2,
         riskLevel: "high",
+        latitude: -23.5,
+        longitude: -68.9,
       },
     }),
   ]);
@@ -85,7 +94,6 @@ async function main() {
     }),
   ]);
 
-  // Map contacts to suppliers
   const links: Array<{ contactId: string; supplierId: string }> = [
     { contactId: contacts[0].id, supplierId: suppliers[0].id },
     { contactId: contacts[0].id, supplierId: suppliers[3].id },
@@ -96,7 +104,6 @@ async function main() {
   ];
   for (const l of links) await db.contactOnSupplier.create({ data: l });
 
-  // A couple of seeded news items + alerts so the dashboard isn't empty
   const news1 = await db.newsItem.create({
     data: {
       title: "Typhoon Hagibis disrupts shipping lanes off Taiwan strait",
@@ -125,7 +132,7 @@ async function main() {
     },
   });
 
-  await db.alert.create({
+  const alert1 = await db.alert.create({
     data: {
       newsId: news1.id,
       supplierId: suppliers[0].id,
@@ -147,11 +154,82 @@ async function main() {
     },
   });
 
+  // Demo shipments — coords picked so arcs draw nicely on the globe
+  const shipments = [
+    {
+      ref: "PO-9821-TW",
+      mode: "ocean",
+      status: "rerouted",
+      originLabel: "Kaohsiung, TW",
+      originLat: 22.6273,
+      originLng: 120.3014,
+      destLabel: "Long Beach, US",
+      destLat: 33.7701,
+      destLng: -118.1937,
+      waypoints: JSON.stringify([[35.0, 145.0]]),
+      valueUSD: 4_200_000,
+      etaAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 12),
+      supplierId: suppliers[0].id,
+      alertId: alert1.id,
+    },
+    {
+      ref: "PO-7732-NL",
+      mode: "ocean",
+      status: "on-track",
+      originLabel: "Singapore",
+      originLat: 1.3521,
+      originLng: 103.8198,
+      destLabel: "Rotterdam, NL",
+      destLat: 51.9244,
+      destLng: 4.4777,
+      waypoints: JSON.stringify([
+        [12.6, 43.4],
+        [30.0, 32.5],
+        [36.0, 14.5],
+      ]),
+      valueUSD: 2_750_000,
+      etaAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18),
+      supplierId: suppliers[1].id,
+    },
+    {
+      ref: "PO-4410-CL",
+      mode: "ocean",
+      status: "delayed",
+      originLabel: "Antofagasta, CL",
+      originLat: -23.65,
+      originLng: -70.4,
+      destLabel: "Yokohama, JP",
+      destLat: 35.4437,
+      destLng: 139.638,
+      waypoints: JSON.stringify([]),
+      valueUSD: 1_900_000,
+      etaAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 22),
+      supplierId: suppliers[3].id,
+    },
+    {
+      ref: "AIR-1187-VN",
+      mode: "air",
+      status: "on-track",
+      originLabel: "Hai Phong, VN",
+      originLat: 20.8449,
+      originLng: 106.6881,
+      destLabel: "Frankfurt, DE",
+      destLat: 50.0379,
+      destLng: 8.5622,
+      waypoints: JSON.stringify([]),
+      valueUSD: 880_000,
+      etaAt: new Date(Date.now() + 1000 * 60 * 60 * 36),
+      supplierId: suppliers[2].id,
+    },
+  ];
+  for (const s of shipments) await db.shipment.create({ data: s });
+
   console.log("Seeded:", {
     suppliers: suppliers.length,
     contacts: contacts.length,
     news: 2,
     alerts: 2,
+    shipments: shipments.length,
   });
 }
 

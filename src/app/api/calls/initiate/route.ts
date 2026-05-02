@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { placeAlertCall } from "@/lib/vapi";
+import { bus } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -27,12 +28,14 @@ export async function POST(req: NextRequest) {
     where: { id: alertId },
     include: {
       news: true,
+      shipments: true,
       supplier: {
         include: {
           contacts: {
             include: { contact: true },
             orderBy: { contact: { escalation: "asc" } },
           },
+          shipments: { take: 5, orderBy: { updatedAt: "desc" } },
         },
       },
     },
@@ -50,6 +53,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Pull every shipment that's either directly linked to this alert OR
+  // belongs to the same supplier — gives the agent something concrete to reroute.
+  const linkedShipments = [
+    ...alert.shipments,
+    ...alert.supplier.shipments.filter(
+      (s) => !alert.shipments.some((x) => x.id === s.id),
+    ),
+  ];
+
   try {
     const vapi = await placeAlertCall({
       toPhone: candidate.phone,
@@ -62,6 +74,14 @@ export async function POST(req: NextRequest) {
         headline: alert.news.title,
         summary: alert.news.summary,
         recommendation: alert.recommendation,
+        shipments: linkedShipments.map((s) => ({
+          ref: s.ref,
+          origin: s.originLabel,
+          dest: s.destLabel,
+          mode: s.mode,
+          status: s.status,
+          valueUSD: s.valueUSD,
+        })),
       },
     });
 
@@ -76,6 +96,12 @@ export async function POST(req: NextRequest) {
     await db.alert.update({
       where: { id: alert.id },
       data: { status: "calling" },
+    });
+    bus.emit({ type: "call.started", callId: call.id, alertId: alert.id });
+    bus.emit({
+      type: "alert.updated",
+      alertId: alert.id,
+      status: "calling",
     });
 
     return NextResponse.json({ call, vapi });
