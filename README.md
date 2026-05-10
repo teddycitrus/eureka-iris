@@ -138,15 +138,19 @@ npm install npm@latest -g
 ## Usage
 
 **Globe view**
+
 The home screen renders a live 3D globe. Supplier nodes are plotted by geography; colour intensity reflects aggregated risk score. Click any node to open a detail panel with event history and current exposure metrics.
 
 **Voice query**
+
 When critical incidents are detected, Eureka triggers a Twilio outbound call and reads back a synthesized briefing followed by recommended actions.
 
 **Ingest pipeline**
+
 `npm run ingest` fetches new supply-chain events from configured data sources, validates them with Zod, and writes them to the database. Schedule this with a cron job or a CI workflow for continuous updates.
 
 **Database studio**
+
 Run `npm run db:studio` to open Prisma Studio and browse or edit records directly.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
